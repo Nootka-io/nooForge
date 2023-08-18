@@ -1,0 +1,9 @@
+{#- templates/ihop.txt - the ihop instruction format -#}
+{%- if system -%}
+<|SYSTEM|>{{ system }}<|END_SYSTEM|>
+{%- else -%}
+<|SYSTEM|>{{ default_system_msg }}<|END_SYSTEM|>
+{%- endif -%}
+{%- if context -%}<|CONTEXT|>{{ context }}<|END_CONTEXT|>{%- endif -%}
+<|INPUT|>{{ input }}<|END_INPUT|>
+{%- if output -%}<|OUTPUT|>{{ output }}<|END_OUTPUT|>{%- endif -%}

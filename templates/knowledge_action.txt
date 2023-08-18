@@ -1,0 +1,10 @@
+{#- templates/ihop_Act.txt - the ihop instruction format with action and knowledge-#}
+{%- if system -%}
+<|SYSTEM|>{{ system }}<|END_SYSTEM|>
+{%- else -%}
+<|SYSTEM|>{{ default_system_msg }}<|END_SYSTEM|>
+{%- endif -%}
+<|INPUT|>{{ input }}<|END_INPUT|>  
+{%- if action -%}<|ACTION|>{{ action }}<|END_ACTION|>{%- endif -%}
+{%- if knowledge -%}<|KNOWLEDGE|>{{ knowledge }}<|END_KNOWLEDGE|>{%- endif -%}
+{%- if response -%}<|RESPONSE|>{{ response }}<|END_RESPONSE|>{%- endif -%}
