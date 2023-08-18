@@ -39,11 +39,14 @@ class NooTokenizer:
             
             tokenizer = self.load_tokenizer()
             
+            if self.config['tokenizer']['name']:
+                tokenizer.save_pretrained(self.config['tokenizer']['name'])            
+            
             self.pad_token_id = tokenizer.pad_token_id
             
             # open the cleaned dataset
             # ToDo: add support for other file formats
-            logging.info(f'Loading dataset: {ds_config["file"]}')
+            logging.info('Loading dataset: %s', ds_config['file'])
             i_db = ddb.read_json(
                 ds_config['file'], 
                 format='newline_delimited'
@@ -268,4 +271,5 @@ if __name__ == '__main__':
     print('DONE Tokenization!')
     print(f'Token count: {token_count}')
     print(f'Training rows: {training_rows}')
+    print('If you\'ve added special tokens make sure to copy the tokenizer to the model before training')
 

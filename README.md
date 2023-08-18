@@ -1,4 +1,6 @@
-# Some title
+# NooTrain
+
+Efficient tokenization and training of huggingface transformers models.
 
 ## Templating
 
