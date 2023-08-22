@@ -1,4 +1,4 @@
-# NooTrain
+# NooForge
 
 Efficient tokenization and training of huggingface transformers models.
 
