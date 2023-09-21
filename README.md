@@ -6,7 +6,7 @@ Efficient tokenization and training of huggingface transformers models.
 
 ## Tokenization
 
-Tokenization is done in in a issolated step to training. This is done to effieciently pack the training samples, and create more seperation of concerns. It's largely handled by duckdb and uses Jinja2 templates for constructing samples.
+Tokenization is done before training in a isolated step. This is done to effieciently pack the training samples, and create more seperation of concerns. It's largely handled by duckdb and uses Jinja2 templates for constructing samples.
 
 Usage example: <https://github.com/getorca/stock_price_chat/blob/main/training_scripts/stc_config.yml>
 
