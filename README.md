@@ -4,15 +4,19 @@ Efficient tokenization and training of huggingface transformers models.
 
 > **NOTE:** This is an alpa release (and I would barely call it that). The code works, however it's lacking any documentation, packaging, and requirements. Some more details and a usage example are available here: <https://github.com/getorca/stock_price_chat>
 
-## Templating
+## Tokenization
+
+Tokenization is done in in a issolated step to training. This is done to effieciently pack the training samples, and create more seperation of concerns. It's largely handled by duckdb and uses Jinja2 templates for constructing samples.
+
+Usage example: <https://github.com/getorca/stock_price_chat/blob/main/training_scripts/stc_config.yml>
+
+### Templating
 
 Uses PyYaml (YAML 1.1 support) to parse the YAML file and Jinja2 to render the templates.
 
 See <https://yaml.org/spec/1.1/> for more info on yaml syntax.
 
 See <https://jinja.palletsprojects.com/en/3.1.x/api/> for more on Jinja2 syntax.
-
-Usage example: <https://github.com/getorca/stock_price_chat/blob/main/training_scripts/stc_config.yml>
 
 ## Training
 
@@ -31,3 +35,5 @@ Usage example: <https://github.com/getorca/stock_price_chat/blob/main/training_s
   - support 4 and 8 bit training
   - support other attention mechnisms, like xformers <https://github.com/facebookresearch/xformers>
   - dockerize training environment
+- tokenization
+  - more felxibility  
