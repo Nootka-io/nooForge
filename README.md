@@ -1,10 +1,14 @@
 # NooForge
 
-Efficient tokenization and training of huggingface transformers models.
+Efficient tokenization and training of huggingface transformers models. 
+
+The core of nooForge is the Packing algorthim 
 
 > **NOTE:** This is an alpa release (and I would barely call it that). The code works, however it's lacking any documentation, packaging, and requirements. Some more details and a usage example are available here: <https://github.com/getorca/stock_price_chat>
 
-## Tokenization
+## Packing & Tokenization
+
+This is the core innovation of NooForge, and offers a large benefit for utilization of compute power for training.
 
 Tokenization is done before training in a isolated step. This is done to effieciently pack the training samples, and create more seperation of concerns. It's largely handled by duckdb and uses Jinja2 templates for constructing samples.
 
