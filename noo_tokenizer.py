@@ -5,7 +5,7 @@ import argparse
 import duckdb as ddb
 from duckdb.typing import *
 from transformers import AutoTokenizer
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 import logging
 
 
@@ -31,28 +31,34 @@ class NooTokenizer:
 
         ddb.sql('SET enable_progress_bar=true;')
         
+        tokenizer = self.load_tokenizer()            
+        # if self.config['tokenizer']['name']:
+        #     tokenizer.save_pretrained(self.config['tokenizer']['name'])            
+        self.pad_token_id = tokenizer.pad_token_id
+        
         for ds_config in self.config['Datasets']:
             
             template_config = self.config['Templates'][ds_config.get('template')]
             
-            needed_column_str = ', '.join([x for x in ds_config.get('template_mapping').values()])
-            
-            tokenizer = self.load_tokenizer()
-            
-            if self.config['tokenizer']['name']:
-                tokenizer.save_pretrained(self.config['tokenizer']['name'])            
-            
-            self.pad_token_id = tokenizer.pad_token_id
+            # ToDo: this needs to support multie turn chat
+            needed_column_str = ', '.join([x for x in ds_config.get('template_mapping').values()])        
             
             # open the cleaned dataset
             # ToDo: add support for other file formats
             logging.info('Loading dataset: %s', ds_config['file'])
-            i_db = ddb.read_json(
-                ds_config['file'], 
-                format='newline_delimited'
-            )
+            if ds_config['type'] == 'huggingface':
+                # ToDo: add support for hf datasets with train test splits, and only selecting part | OR recommend pre cleaning the dataset
+                hf_ds = load_dataset(ds_config['file'])
+                # convert to duckdb
+                up_arrow = hf_ds['train'].data.table
+                i_db = ddb.sql("CREATE TABLE i_db AS SELECT * FROM up_arrow;")                
+            else:
+                i_db = ddb.read_json(
+                    ds_config['file'], 
+                    format='newline_delimited'
+                )
             
-            def tokenize_udf(input_list: list[str]) -> list[int]:
+            def tokenize_udf(input_list) -> list[int]:
                 '''
                 formats and tokenizes the input list to an input
                 '''
@@ -72,28 +78,31 @@ class NooTokenizer:
             ddb.create_function('tokenize', tokenize_udf)
 
             # format and tokenize the dataset
-            logging.info(f'Tokenizing dataset')
+            logging.info(f'Tokenizing the dataset')
             tokenized_db = ddb.sql(f"""
-                SELECT 
+                SELECT
                     tokenize([{needed_column_str}]) as input_ids,
                     len(input_ids) as token_count
                 FROM i_db
             """)
+                
+            # ToDo: check max token length and warn if it's longer than `max_length`
             
-            logging.info(f'Starting grouping')
+            logging.info(f'Grouping the dataset')
             self.group_dataset()  # group the dataset by token count
-            
-            # ToDo: handle training data that's longer than `max_length` by chunking it with an overlap and only adding eos string to the last chunk 
-            
+            # ToDo: handle training data that's longer than `max_length` by chunking it with an overlap and only adding eos string to the last chunk
+            if ddb.sql('SELECT token_count FROM grouped_data ORDER BY token_count DESC LIMIT 1').fetchone()[0] > self.max_length:
+                logging.error(f'The longest tokenized sample is longer than `max_length` ({self.max_length}), exiting. Try increasing `max_length`. A chunking strategy has not yet been implemented')
+                raise SystemExit(0) 
             # recursively split the groups that are longer than `max_length`
+            recursion_count = 0
             while True:
                 # this can take a long time with small samples
-                logging.info(f'runnning recurisve grouping')
-                
-                # breakpoint()
-                                
+                logging.info(f'runnning recursive grouping. On recursion: {recursion_count}')
+                recursion_count += 1
+                    
                 updated_groups = self.split_overs()
-                
+                # breakpoint()
                 ddb.sql(f'DROP TABLE IF EXISTS grouped_data2;')
                 
                 grouped_db = ddb.sql(f"""
@@ -117,7 +126,7 @@ class NooTokenizer:
                 ddb.sql('CREATE TABLE grouped_data AS SELECT * FROM (SELECT * FROM grouped_data2);')
                 
                 has_rows = ddb.sql(f'SELECT * FROM grouped_data WHERE group_token_count > {self.max_length} LIMIT 1').fetchone()
-                
+
                 if has_rows:
                     continue
                 else: 
@@ -242,8 +251,16 @@ class NooTokenizer:
         """)
         
     def load_tokenizer(self):
+        
+        try:
+            tokenizer_path = self.config['tokenizer']['path'] if self.config['tokenizer']['path'] else self.config['model']
+        except KeyError:
+            # log an error and exit
+            logging.error('No tokenizer path or model specified, exiting')
+            raise SystemExit(0)
+        
         tokenizer = AutoTokenizer.from_pretrained(
-            self.config['model'], 
+            tokenizer_path, 
             add_eos_token=True,
             model_max_length=self.padded_max_length,
         )
@@ -251,7 +268,14 @@ class NooTokenizer:
         if self.config['tokenizer']['additional_special_tokens']:            
             special_tokens_dict = {'additional_special_tokens': self.config['tokenizer']['additional_special_tokens']}
             tokenizer.add_special_tokens(special_tokens_dict)
-        tokenizer.pad_token = self.config['tokenizer']['pad_token']
+        if self.config['tokenizer']['eos_token']:
+            tokenizer.eos_token = self.config['tokenizer']['eos_token']
+        if self.config['tokenizer']['pad_token']:
+            tokenizer.pad_token = self.config['tokenizer']['pad_token']
+        
+        # save the tokenizer
+        if self.config['tokenizer']['name']:
+            tokenizer.save_pretrained(self.config['tokenizer']['name'])      
         
         return tokenizer
         

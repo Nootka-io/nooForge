@@ -1,0 +1,25 @@
+%YAML 1.1
+---
+
+Name: Mamba_Capybara
+
+tokenizer:
+  path: EleutherAI/gpt-neox-20b
+  eos_token: <|endoftext|>
+  pad_token: <|padding|>
+  additional_special_tokens: null
+  name: ./data_out/mamba_capybara_tokenizer
+max_length: 20480
+tokenized_ds: ./data_out/mamba_capybara.hf
+
+Templates:
+  capybara:
+    type: array
+    file: input_output.txt
+
+Datasets:
+  - file: LDJnr/Capybara
+    type: huggingface
+    template: capybara
+    template_mapping: 
+      conversation: conversation

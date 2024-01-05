@@ -1,0 +1,5 @@
+{#- templates/input_output.txt - a super simple tmeplate for musti tuen convos with only input and output defined by `Input:` and `Output:` -#}
+{%- for part in conversation -%}
+Input: {{ part.input }}
+Output: {{ part.output }}
+{%- endfor -%}
